@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Large data - shared via Drive, not Git
+data/
+*.h5
+*.tif
+*.zip

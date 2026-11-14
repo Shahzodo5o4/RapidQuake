@@ -224,3 +224,6 @@ data/
 *.h5
 *.tif
 *.zip
+
+# web map vendor files
+!web/lib/

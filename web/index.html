@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RapidQuake</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="lib/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12.5" fill="none" stroke="#fdbb84" stroke-width="2"/><path d="M3 15h5l2.5-6 3.5 12 3-8 2 2h6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><b>RapidQuake</b><span>From radar to rescue · NASA-ISRO NISAR shows where to inspect first after an earthquake</span></div>
+  </div>
+  <nav class="city" aria-label="City">
+    <button type="button" id="cityP" class="on">Pereira, Colombia</button>
+    <button type="button" id="cityT">Tashkent, Uzbekistan</button>
+  </nav>
+</header>
+
+<section class="kpis" id="kpis" aria-label="Key numbers"></section>
+
+<main class="grid">
+  <aside class="panel left" id="left" aria-label="Filters"></aside>
+  <div class="mapwrap">
+    <div id="map" role="region" aria-label="Map"></div>
+    <div class="legend" id="legend"></div>
+    <div class="swipe" id="swipe" hidden>
+      <span>Before</span><input type="range" id="swipeR" min="0" max="100" value="50" aria-label="Radar before or after the earthquake"><span>After</span>
+    </div>
+  </div>
+  <aside class="panel right" id="right" aria-label="Ranking and validation"></aside>
+</main>
+
+<footer class="credits">
+  Data: NASA-ISRO NISAR L2 GUNW via NASA ASF DAAC · Damage reference: © European Union, Copernicus EMS EMSR916 · USGS ShakeMap · WorldPop 2020 (CC BY 4.0) · Tashkent City Statistics Department (2025) · Comunas: Alcaldía de Pereira · Buildings & boundaries © OpenStreetMap contributors (ODbL) · Map: Leaflet · RapidQuake team, NASA Space Apps Challenge 2026, Tashkent
+</footer>
+
+<script src="lib/leaflet.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

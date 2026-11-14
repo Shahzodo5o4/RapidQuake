@@ -20,8 +20,8 @@ map.attributionControl.setPrefix('Leaflet');
 map.createPane('base').style.zIndex = 210;
 map.createPane('radar').style.zIndex = 330;
 const img = D.images;
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', maxZoom: 19,
-  attribution: '© <a href="https://carto.com/attributions">CARTO</a> © OpenStreetMap contributors' }).addTo(map);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+  maxNativeZoom: 16, maxZoom: 19, attribution: 'Basemap © Esri, HERE, Garmin, © OpenStreetMap contributors' }).addTo(map);
 const baseP = L.imageOverlay(img.base_p.img, img.base_p.bounds, { pane: 'base', attribution: '' });
 const baseT = L.imageOverlay(img.base_t.img, img.base_t.bounds, { pane: 'base', attribution: '' });
 const radBefore = L.imageOverlay(img.before.img, img.before.bounds, { pane: 'radar', opacity: .85 });

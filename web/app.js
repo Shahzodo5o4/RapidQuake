@@ -158,9 +158,12 @@ function chips(labels, zeroLabel) {
 function leftP() {
   const m = mode();
   $('left').innerHTML = `
-    <h3>Priority source</h3>
-    ${seg('src', [['shake', '1 · First estimate', 'minutes after: shaking × residents'], ['radar', '2 · NISAR radar update', '13 & 16 Aug: buildings that changed'],
-      ['ems', 'Official damage map', 'Copernicus EMS, for checking only']], S.src)}
+    <h3>Timeline · what is known when</h3>
+    <div class="tl" id="src">${[['shake', '10 Aug · minutes after', 'First estimate', 'USGS ShakeMap × residents'],
+      ['ems', '12 Aug · 2 days after', 'Copernicus EMS damage map', 'optical satellite, city centre only (reference)'],
+      ['radar', '13 & 16 Aug · NISAR passes', 'RapidQuake radar priority', 'whole city, free data, through clouds']].map(([k, d, b, sm]) =>
+      `<button type="button" data-k="${k}" class="${k === S.src ? 'on' : ''}" aria-pressed="${k === S.src}"><i></i><span><em>${d}</em><b>${b}</b><small>${sm}</small></span></button>`).join('')}</div>
+    <p class="hint">Next NISAR passes every 12 days keep the map up to date.</p>
     <h3>Detail level</h3>
     ${seg('lvl', [['comuna', 'Comunas', ''], ['cell', '500 m squares', '']], S.level, true)}
     <h3>Show priority classes</h3>
@@ -268,13 +271,15 @@ function legend() {
     h = `<b>${m.title}</b>${[5, 4, 3, 2, 1].filter(c => m.labels[c - 1] !== '—').map(c => `<div><i style="background:${COL[c]}"></i>${m.labels[c - 1]}</div>`).join('')}`;
     if (S.src === 'ems' && S.level === 'comuna') h += `<div><i style="background:#d9dce1;border-style:dashed"></i>not mapped by EMS</div>`;
     if (S.src === 'radar') h += `<div><i class="hatch"></i>dashed outline = low radar confidence</div>`;
+    if (S.radar) h += `<div style="display:block;margin-top:6px"><b style="margin:0">NISAR coherence</b><div class="grad"></div><div class="gradl"><span>low · changed</span><span>high · stable</span></div></div>`;
     if (S.ems.size) h += `<div><span class="dot" style="background:#7f0000"></span><span class="dot" style="background:#e34a33"></span><span class="dot" style="background:#fdbb84"></span>EMS damaged buildings</div>`;
   } else if (S.tk === 'exposure') {
     h = `<b>Earthquake exposure index</b>${['Very high', 'High', 'Medium', 'Low', 'Very low'].map((l, i) => `<div><i style="background:${COL[5 - i]}"></i>${l}</div>`).join('')}`;
   } else {
     h = `<b>NISAR radar visibility</b><div><i style="background:#3c9a4a"></i>reliably watched buildings</div><div><i style="background:#c8732e"></i>weaker signal (trees, construction)</div>`;
   }
-  $('legend').innerHTML = h;
+  $('legend').innerHTML = h.replace('<b>', '<b class="lt" title="Show or hide legend">');
+  $('legend').querySelector('.lt').onclick = () => $('legend').classList.toggle('min');
 }
 
 /* ---------- regional inset (Pereira) ---------- */
@@ -288,7 +293,7 @@ L.marker([E.lat, E.lon], { icon: L.divIcon({ className: '', html: '<div class="e
 D.places.forEach(c => L.circleMarker([c.lat, c.lon], { radius: c.main ? 5 : 3, color: '#fff', weight: 1.5, fillColor: c.main ? '#141a26' : '#5f6670', fillOpacity: 1, interactive: false })
   .bindTooltip(c.name, { permanent: true, direction: c.name === 'Armenia' || c.name === 'Cali' ? 'right' : 'right', className: 'insetlbl', offset: [5, 0] }).addTo(imap));
 const fitInset = () => { imap.invalidateSize(); imap.fitBounds([[3.35, -77.45], [5.85, -75.2]]); };
-if (window.innerWidth < 700) { $('inset').hidden = true; $('insetO').hidden = false; }
+if (window.innerWidth < 700 || $('map').clientHeight < 560) { $('inset').hidden = true; $('insetO').hidden = false; }
 $('insetX').onclick = () => { $('inset').hidden = true; $('insetO').hidden = false; };
 $('insetO').onclick = () => { $('inset').hidden = false; $('insetO').hidden = true; fitInset(); };
 

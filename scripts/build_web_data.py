@@ -50,10 +50,16 @@ places=[{"name":"Pereira","lat":4.8133,"lon":-75.6961,"main":True},{"name":"Mani
         {"name":"Armenia","lat":4.5339,"lon":-75.6811},{"name":"Cali","lat":3.4516,"lon":-76.5320},{"name":"Quibdó","lat":5.6947,"lon":-76.6611}]
 # --- Tashkent
 t=gpd.read_file(f"{R}/output/tashkent.gpkg", layer="districts")
+from shapely.geometry import box as _box
+_b=j_tk_bounds=None
 tc=["name_en","pop","area_km2","pop_density","bld_n","bld_density","built_share","exposure","rank_exposure"]
 # teammate metrics
 s2=open('/tmp/web/data.js').read(); j=json.loads(s2[s2.index('{'):s2.rstrip().rstrip(';').rindex('}')+1])
-D={"shake":shake,"places":places,"epicentre":{"lat":4.99,"lon":-76.29,"depth_km":103},"comunas":gj(c,cc),"cells":cells,"ems":gj(e,["dmg"],6),"ems_aoi":gj(aoi,[]),"tashkent":gj(t,tc),
+tb=j["tk_watch"]["bounds"]; cov=_box(tb[0][1],tb[0][0],tb[1][1],tb[1][0])
+nod=gpd.GeoDataFrame(geometry=[t.to_crs(4326).union_all().difference(cov)],crs=4326)
+nod["geometry"]=nod.geometry.simplify(0.0003)
+D_tk_nodata=json.loads(nod.to_json(drop_id=True))
+D={"tk_nodata":D_tk_nodata,"shake":shake,"places":places,"epicentre":{"lat":4.99,"lon":-76.29,"depth_km":103},"comunas":gj(c,cc),"cells":cells,"ems":gj(e,["dmg"],6),"ems_aoi":gj(aoi,[]),"tashkent":gj(t,tc),
    "metrics":{"rho_comuna":round(float(rho.statistic),2),"p_comuna":round(float(rho.pvalue),3),"n_comuna":int(len(s)),
               "top10_ems":j["metrics"]["top10_ems"],"top10_built":j["metrics"]["top10_built"],"rho_cells":j["metrics"]["spearman"],
               "pix_hit":j["metrics"]["pixel"]["ems_hit"],"pix_rand":j["metrics"]["pixel"]["random"],

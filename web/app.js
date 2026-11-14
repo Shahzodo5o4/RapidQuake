@@ -20,8 +20,10 @@ map.attributionControl.setPrefix('Leaflet');
 map.createPane('base').style.zIndex = 210;
 map.createPane('radar').style.zIndex = 330;
 const img = D.images;
-const baseP = L.imageOverlay(img.base_p.img, img.base_p.bounds, { pane: 'base', attribution: 'Buildings © OpenStreetMap contributors' });
-const baseT = L.imageOverlay(img.base_t.img, img.base_t.bounds, { pane: 'base', attribution: 'Buildings © OpenStreetMap contributors' });
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', maxZoom: 19,
+  attribution: '© <a href="https://carto.com/attributions">CARTO</a> © OpenStreetMap contributors' }).addTo(map);
+const baseP = L.imageOverlay(img.base_p.img, img.base_p.bounds, { pane: 'base', attribution: '' });
+const baseT = L.imageOverlay(img.base_t.img, img.base_t.bounds, { pane: 'base', attribution: '' });
 const radBefore = L.imageOverlay(img.before.img, img.before.bounds, { pane: 'radar', opacity: .85 });
 const radAfter = L.imageOverlay(img.across.img, img.across.bounds, { pane: 'radar', opacity: .5 });
 const tkWatch = L.imageOverlay(img.tk_watch.img, img.tk_watch.bounds, { pane: 'radar', opacity: .9 });
@@ -129,6 +131,13 @@ function tkHl(key, on) {
 const tkPins = L.layerGroup();
 D.tashkent.features.forEach(f => { const l = tkByKey.get('t' + f.properties.name_en);
   L.marker(l.getBounds().getCenter(), { icon: L.divIcon({ className: '', html: `<div class="rnk">${f.properties.rank_exposure}</div>`, iconSize: [24, 24] }), interactive: false, keyboard: false }).addTo(tkPins); });
+const tb = img.tk_watch.bounds;
+const tkNoData = L.layerGroup([
+  L.geoJSON(D.tk_nodata, { style: { color: '#6b7280', weight: 1, dashArray: '3 4', fillColor: '#9aa1ab', fillOpacity: .45 }, interactive: false }),
+  L.rectangle(tb, { color: '#141a26', weight: 1.6, dashArray: '8 6', fill: false, interactive: false }),
+  L.marker([tb[1][0], tb[0][1]], { opacity: 0, interactive: false, keyboard: false, icon: L.divIcon({ className: '', iconSize: [0, 0] }) })
+    .bindTooltip('NISAR area processed by our team', { permanent: true, direction: 'right', className: 'insetlbl', offset: [2, -10] })
+]);
 const T = L.layerGroup([baseT]);
 
 /* ---------- UI builders ---------- */
@@ -276,7 +285,7 @@ function legend() {
   } else if (S.tk === 'exposure') {
     h = `<b>Earthquake exposure index</b>${['Very high', 'High', 'Medium', 'Low', 'Very low'].map((l, i) => `<div><i style="background:${COL[5 - i]}"></i>${l}</div>`).join('')}`;
   } else {
-    h = `<b>NISAR radar visibility</b><div><i style="background:#3c9a4a"></i>reliably watched buildings</div><div><i style="background:#c8732e"></i>weaker signal (trees, construction)</div>`;
+    h = `<b>NISAR radar visibility</b><div><i style="background:#3c9a4a"></i>reliably watched buildings</div><div><i style="background:#c8732e"></i>weaker signal (trees, construction)</div><div><i style="background:#c3c7cd;border-style:dashed"></i>outside the area we processed</div>`;
   }
   $('legend').innerHTML = h.replace('<b>', '<b class="lt" title="Show or hide legend">');
   $('legend').querySelector('.lt').onclick = () => $('legend').classList.toggle('min');
@@ -320,17 +329,24 @@ function render() {
   kpis();
   ['cityP', 'cityT'].forEach(id => $(id).classList.toggle('on', (id === 'cityP') === (S.city === 'P')));
   const showInset = S.city === 'P'; if (!showInset) { $('inset').hidden = true; $('insetO').hidden = true; } else if ($('insetO').hidden) { $('inset').hidden = false; setTimeout(fitInset, 0); }
-  if (S.city === 'P') { map.removeLayer(T); map.removeLayer(tumans); map.removeLayer(tkPins); map.removeLayer(tkWatch); P.addTo(map); leftP(); rightP(); drawP(); }
+  if (S.city === 'P') { map.removeLayer(T); map.removeLayer(tumans); map.removeLayer(tkPins); map.removeLayer(tkNoData); map.removeLayer(tkWatch); P.addTo(map); leftP(); rightP(); drawP(); }
   else {
     [P, comunas, cells, outline, aoi, emsLayer, pins, radBefore, radAfter].forEach(l => map.removeLayer(l)); $('swipe').hidden = true;
-    T.addTo(map); if (S.tk === 'watch') tkWatch.addTo(map); else map.removeLayer(tkWatch);
+    T.addTo(map); if (S.tk === 'watch') { tkWatch.addTo(map); tkNoData.addTo(map); } else { map.removeLayer(tkWatch); map.removeLayer(tkNoData); }
     tumans.setStyle(tumans.options.style); tumans.addTo(map); if (S.tk === 'exposure') tkPins.addTo(map); else map.removeLayer(tkPins); leftT(); rightT(); legend();
   }
 }
+let userMoved = false;
+['pointerdown', 'wheel', 'touchstart'].forEach(ev => $('map').addEventListener(ev, () => { userMoved = true; }, { passive: true }));
+function fitCity() { map.invalidateSize(); map.fitBounds((S.city === 'P' ? comunas : tumans).getBounds(), { padding: [24, 24] }); }
+if (window.ResizeObserver) new ResizeObserver(() => { map.invalidateSize(); if (!userMoved) fitCity(); }).observe($('map'));
+window.addEventListener('load', () => { if (!userMoved) fitCity(); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!userMoved) fitCity(); });
 function go(city) {
+  userMoved = false;
   $('left').scrollTop = 0; $('right').scrollTop = 0;
   S.city = city; S.cls = new Set([1, 2, 3, 4, 5]); render();
-  map.fitBounds((city === 'P' ? comunas : tumans).getBounds(), { padding: [24, 24] });
+  fitCity();
   try { history.replaceState(null, '', city === 'P' ? '#pereira' : '#tashkent'); } catch (e) { /* ignore */ }
 }
 $('cityP').onclick = () => go('P'); $('cityT').onclick = () => go('T');

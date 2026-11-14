@@ -390,7 +390,7 @@ const STEPS = [
     run: () => { clearStory(); S.src = 'radar'; S.level = 'cell'; S.ems = new Set(['destroyed', 'damaged', 'possible']); render(); fly(aoi.getBounds()); setTimeout(() => pulseTop(3), reduce ? 0 : 1900); } },
   { when: 'Our hometown', title: 'Tashkent is ready before the next earthquake',
     text: 'The 1966 shock left 100,000 people homeless. Today NISAR\'s view of Tashkent is our "before" image, and the exposure ranking shows where 3.2 million residents are most at risk.',
-    run: () => { clearStory(); go('T', true); } }
+    run: () => { clearStory(); go('T', true); map.invalidateSize(); map.fitBounds(tumans.getBounds(), { paddingTopLeft: [30, 30], paddingBottomRight: [30, 190] }); } }
 ];
 let stI = -1, stTimer = null;
 function clearStory() { [shakeMain, rings, pereiraDot, pulses].forEach(l => map.removeLayer(l)); }
@@ -401,7 +401,7 @@ function showStep(i) {
   $('stPrev').disabled = stI === 0; $('stNext').textContent = stI === STEPS.length - 1 ? 'Explore the map' : 'Next';
   userMoved = true; st.run();
 }
-function endStory() { $('story').hidden = true; document.querySelector('.mapwrap').classList.remove('storying'); clearStory(); stI = -1; }
+function endStory() { const was = stI >= 0; $('story').hidden = true; document.querySelector('.mapwrap').classList.remove('storying'); clearStory(); stI = -1; if (was) { userMoved = false; fitCity(); } }
 $('play').onclick = () => showStep(0);
 $('stNext').onclick = () => stI === STEPS.length - 1 ? endStory() : showStep(stI + 1);
 $('stPrev').onclick = () => showStep(stI - 1);

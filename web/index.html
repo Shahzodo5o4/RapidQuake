@@ -28,6 +28,12 @@
   <div class="mapwrap">
     <div id="map" role="region" aria-label="Map"></div>
     <div class="legend" id="legend"></div>
+    <div class="inset" id="inset">
+      <div class="inset-h"><b>Why Pereira? Regional shaking</b><button type="button" id="insetX" aria-label="Hide regional map">×</button></div>
+      <div id="insetMap" role="img" aria-label="Regional map: epicentre, USGS ShakeMap intensity and Pereira"></div>
+      <div class="inset-l"><span><i style="background:#fecc5c"></i>V</span><span><i style="background:#fd8d3c"></i>VI</span><span><i style="background:#f03b20"></i>VII</span><span><i style="background:#bd0026"></i>VIII</span><span>MMI · USGS</span><span>★ epicentre, 103 km deep (SGC)</span></div>
+    </div>
+    <button type="button" class="inset-open" id="insetO" hidden>Regional map</button>
     <div class="swipe" id="swipe" hidden>
       <span>Before</span><input type="range" id="swipeR" min="0" max="100" value="50" aria-label="Radar before or after the earthquake"><span>After</span>
     </div>

@@ -38,12 +38,22 @@ cells=gj(cl,["cell","area","pop","built_px","damage_frac_raw","people_affected",
 e=gpd.read_file(f"{U}/geo/pereira/emsr916/EMSR916_AOI02_GRA_PRODUCT_v1/EMSR916_AOI02_GRA_PRODUCT_v1.gpkg", layer=[l[0] for l in pyogrio.list_layers(f"{U}/geo/pereira/emsr916/EMSR916_AOI02_GRA_PRODUCT_v1/EMSR916_AOI02_GRA_PRODUCT_v1.gpkg") if 'builtUp' in l[0]][0])
 aoi=gpd.read_file(f"{U}/geo/pereira/emsr916/EMSR916_AOI02_GRA_PRODUCT_v1/EMSR916_AOI02_GRA_PRODUCT_v1.gpkg", layer=[l[0] for l in pyogrio.list_layers(f"{U}/geo/pereira/emsr916/EMSR916_AOI02_GRA_PRODUCT_v1/EMSR916_AOI02_GRA_PRODUCT_v1.gpkg") if 'areaOfInterest' in l[0]][0])
 e["dmg"]=e.damage_gra.map({"Destroyed":"destroyed","Damaged":"damaged","Possibly damaged":"possible"})
+# --- regional ShakeMap (MMI contours, dissolved to whole MMI units, simplified)
+from shapely.geometry import box
+sh=gpd.read_file(f"{U}/geo/pereira/shakemap/mi.shp")
+sh["mmi"]=np.floor(sh.PARAMVALUE+1e-6).astype(int)
+sh=sh[sh.mmi>=5].dissolve("mmi").reset_index()
+sh=gpd.clip(sh, box(-78.0,3.2,-74.6,6.6))
+sh["geometry"]=sh.geometry.simplify(0.012, preserve_topology=True)
+shake=gj(sh,["mmi"],3)
+places=[{"name":"Pereira","lat":4.8133,"lon":-75.6961,"main":True},{"name":"Manizales","lat":5.0689,"lon":-75.5174},
+        {"name":"Armenia","lat":4.5339,"lon":-75.6811},{"name":"Cali","lat":3.4516,"lon":-76.5320},{"name":"Quibdó","lat":5.6947,"lon":-76.6611}]
 # --- Tashkent
 t=gpd.read_file(f"{R}/output/tashkent.gpkg", layer="districts")
 tc=["name_en","pop","area_km2","pop_density","bld_n","bld_density","built_share","exposure","rank_exposure"]
 # teammate metrics
 s2=open('/tmp/web/data.js').read(); j=json.loads(s2[s2.index('{'):s2.rstrip().rstrip(';').rindex('}')+1])
-D={"comunas":gj(c,cc),"cells":cells,"ems":gj(e,["dmg"],6),"ems_aoi":gj(aoi,[]),"tashkent":gj(t,tc),
+D={"shake":shake,"places":places,"epicentre":{"lat":4.99,"lon":-76.29,"depth_km":103},"comunas":gj(c,cc),"cells":cells,"ems":gj(e,["dmg"],6),"ems_aoi":gj(aoi,[]),"tashkent":gj(t,tc),
    "metrics":{"rho_comuna":round(float(rho.statistic),2),"p_comuna":round(float(rho.pvalue),3),"n_comuna":int(len(s)),
               "top10_ems":j["metrics"]["top10_ems"],"top10_built":j["metrics"]["top10_built"],"rho_cells":j["metrics"]["spearman"],
               "pix_hit":j["metrics"]["pixel"]["ems_hit"],"pix_rand":j["metrics"]["pixel"]["random"],

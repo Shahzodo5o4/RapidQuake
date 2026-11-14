@@ -277,6 +277,21 @@ function legend() {
   $('legend').innerHTML = h;
 }
 
+/* ---------- regional inset (Pereira) ---------- */
+const SH = { 5: '#fecc5c', 6: '#fd8d3c', 7: '#f03b20', 8: '#bd0026' };
+const imap = L.map('insetMap', { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false,
+  boxZoom: false, keyboard: false, touchZoom: false }).setView([4.6, -76.2], 7);
+L.geoJSON(D.shake, { style: f => ({ fillColor: SH[f.properties.mmi], fillOpacity: .85, color: '#fff', weight: .4 }), interactive: false }).addTo(imap);
+const E = D.epicentre;
+L.marker([E.lat, E.lon], { icon: L.divIcon({ className: '', html: '<div class="epi">★</div>', iconSize: [22, 22], iconAnchor: [11, 11] }), interactive: false })
+  .bindTooltip('Epicentre', { permanent: true, direction: 'left', className: 'insetlbl', offset: [-9, 0] }).addTo(imap);
+D.places.forEach(c => L.circleMarker([c.lat, c.lon], { radius: c.main ? 5 : 3, color: '#fff', weight: 1.5, fillColor: c.main ? '#141a26' : '#5f6670', fillOpacity: 1, interactive: false })
+  .bindTooltip(c.name, { permanent: true, direction: c.name === 'Armenia' || c.name === 'Cali' ? 'right' : 'right', className: 'insetlbl', offset: [5, 0] }).addTo(imap));
+const fitInset = () => { imap.invalidateSize(); imap.fitBounds([[3.35, -77.45], [5.85, -75.2]]); };
+if (window.innerWidth < 700) { $('inset').hidden = true; $('insetO').hidden = false; }
+$('insetX').onclick = () => { $('inset').hidden = true; $('insetO').hidden = false; };
+$('insetO').onclick = () => { $('inset').hidden = false; $('insetO').hidden = true; fitInset(); };
+
 /* ---------- drawing ---------- */
 function drawPins() {
   pins.clearLayers(); const m = mode();
@@ -299,6 +314,7 @@ function drawP() {
 function render() {
   kpis();
   ['cityP', 'cityT'].forEach(id => $(id).classList.toggle('on', (id === 'cityP') === (S.city === 'P')));
+  const showInset = S.city === 'P'; if (!showInset) { $('inset').hidden = true; $('insetO').hidden = true; } else if ($('insetO').hidden) { $('inset').hidden = false; setTimeout(fitInset, 0); }
   if (S.city === 'P') { map.removeLayer(T); map.removeLayer(tumans); map.removeLayer(tkPins); map.removeLayer(tkWatch); P.addTo(map); leftP(); rightP(); drawP(); }
   else {
     [P, comunas, cells, outline, aoi, emsLayer, pins, radBefore, radAfter].forEach(l => map.removeLayer(l)); $('swipe').hidden = true;

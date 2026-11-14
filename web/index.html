@@ -5,16 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RapidQuake</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="lib/leaflet.css">
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 <header class="top">
   <div class="brand">
     <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12.5" fill="none" stroke="#fdbb84" stroke-width="2"/><path d="M3 15h5l2.5-6 3.5 12 3-8 2 2h6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <div><b>RapidQuake</b><span>From radar to rescue · NASA-ISRO NISAR shows where to inspect first after an earthquake</span></div>
+    <div><b>RapidQuake</b><span>From radar to rescue: NASA-ISRO NISAR shows rescue teams where to look first after an earthquake</span></div>
   </div>
+  <button type="button" class="play" id="play"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>Play the story</button>
   <nav class="city" aria-label="City">
     <button type="button" id="cityP" class="on">Pereira, Colombia</button>
     <button type="button" id="cityT">Tashkent, Uzbekistan</button>
@@ -34,6 +35,10 @@
       <div class="inset-l"><span><i style="background:#fecc5c"></i>V</span><span><i style="background:#fd8d3c"></i>VI</span><span><i style="background:#f03b20"></i>VII</span><span><i style="background:#bd0026"></i>VIII</span><span>MMI · USGS</span><span>★ epicentre, 103 km deep (SGC)</span></div>
     </div>
     <button type="button" class="inset-open" id="insetO" hidden>Regional map</button>
+    <div class="story" id="story" hidden role="dialog" aria-live="polite" aria-label="Story">
+      <div class="when" id="stWhen"></div><h2 id="stTitle"></h2><p id="stText"></p>
+      <div class="ctl"><div class="dots" id="stDots"></div><button type="button" id="stPrev">Back</button><button type="button" class="go" id="stNext">Next</button><button type="button" id="stClose" aria-label="Close story">Close</button></div>
+    </div>
     <div class="swipe" id="swipe" hidden>
       <span>Before</span><input type="range" id="swipeR" min="0" max="100" value="50" aria-label="Radar before or after the earthquake"><span>After</span>
     </div>
@@ -46,7 +51,7 @@
 </footer>
 
 <script src="lib/leaflet.js"></script>
-<script src="data.js?v=5"></script>
-<script src="app.js?v=5"></script>
+<script src="data.js?v=6"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>

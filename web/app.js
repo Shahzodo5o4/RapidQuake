@@ -20,7 +20,7 @@ map.attributionControl.setPrefix('Leaflet');
 map.createPane('base').style.zIndex = 210;
 map.createPane('radar').style.zIndex = 330;
 const img = D.images;
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
   maxNativeZoom: 16, maxZoom: 19, attribution: 'Basemap © Esri, HERE, Garmin, © OpenStreetMap contributors' }).addTo(map);
 const baseP = L.imageOverlay(img.base_p.img, img.base_p.bounds, { pane: 'base', attribution: '' });
 const baseT = L.imageOverlay(img.base_t.img, img.base_t.bounds, { pane: 'base', attribution: '' });
@@ -65,8 +65,8 @@ const visible = p => { const c = mode().cls(p); return c > 0 && S.cls.has(c) && 
 const byId = new Map();
 function polyStyle(f) {
   const p = f.properties, c = mode().cls(p), on = visible(p);
-  if (c === 0) return { color: '#9aa1ab', weight: S.level === 'comuna' ? 1 : 0, dashArray: '3 3', fillColor: '#d9dce1', fillOpacity: S.level === 'comuna' ? .35 : 0 };
-  return { color: S.level === 'comuna' ? '#2b2f36' : '#ffffff', weight: S.level === 'comuna' ? 1.1 : .6,
+  if (c === 0) return { color: '#6f8396', weight: S.level === 'comuna' ? 1 : 0, dashArray: '3 3', fillColor: '#3a4b5c', fillOpacity: S.level === 'comuna' ? .45 : 0 };
+  return { color: S.level === 'comuna' ? '#0f1a24' : '#0f1a24', weight: S.level === 'comuna' ? 1.2 : .6,
     dashArray: lowConf(p) ? '4 3' : null, fillColor: COL[c], fillOpacity: (on ? (lowConf(p) ? .45 : .82) : .07) * (S.radar ? .45 : 1), opacity: on ? 1 : .35 };
 }
 function popup(p, isCell) {
@@ -90,11 +90,11 @@ function bindFeature(f, layer, isCell) {
 }
 const comunas = L.geoJSON(D.comunas, { style: polyStyle, onEachFeature: (f, l) => bindFeature(f, l, false) });
 const cells = L.geoJSON(D.cells, { style: polyStyle, onEachFeature: (f, l) => bindFeature(f, l, true) });
-const outline = L.geoJSON(D.comunas, { style: { color: '#2b2f36', weight: .9, fill: false, opacity: .55 }, interactive: false });
-const aoi = L.geoJSON(D.ems_aoi, { style: { color: '#2b8cbe', weight: 2, dashArray: '7 5', fill: false }, interactive: false });
+const outline = L.geoJSON(D.comunas, { style: { color: '#c3cfdb', weight: .9, fill: false, opacity: .55 }, interactive: false });
+const aoi = L.geoJSON(D.ems_aoi, { style: { color: '#35b7a6', weight: 2, dashArray: '7 5', fill: false }, interactive: false });
 const emsLayer = L.geoJSON(D.ems, {
   filter: f => S.ems.has(f.properties.dmg),
-  pointToLayer: (f, ll) => L.circleMarker(ll, { radius: 4.2, color: '#fff', weight: 1.1, fillColor: EMS[f.properties.dmg][0], fillOpacity: 1 })
+  pointToLayer: (f, ll) => L.circleMarker(ll, { radius: 4.2, color: '#0f1a24', weight: 1.1, fillColor: EMS[f.properties.dmg][0], fillOpacity: 1 })
     .bindTooltip(EMS[f.properties.dmg][1] + ' (Copernicus EMS)', { direction: 'top' })
 });
 const pins = L.layerGroup();
@@ -102,7 +102,7 @@ const P = L.layerGroup([baseP]);
 
 function hl(key, on) {
   const l = byId.get(key); if (!l) return;
-  if (on) { l.setStyle({ weight: 3.2, color: '#111' }); l.bringToFront(); } else (S.level === 'comuna' ? comunas : cells).resetStyle(l);
+  if (on) { l.setStyle({ weight: 3.2, color: '#ffffff' }); l.bringToFront(); } else (S.level === 'comuna' ? comunas : cells).resetStyle(l);
   const li = document.querySelector(`[data-key="${key}"]`); if (li) li.classList.toggle('hl', on);
 }
 
@@ -111,21 +111,21 @@ const tkCls = p => { const e = p.exposure; return e < .3104 ? 1 : e < .4828 ? 2 
 const tkByKey = new Map();
 const tumans = L.geoJSON(D.tashkent, {
   style: f => S.tk === 'exposure'
-    ? { color: '#2b2f36', weight: 1.2, fillColor: COL[tkCls(f.properties)], fillOpacity: S.cls.has(tkCls(f.properties)) ? .82 : .07 }
-    : { color: '#14213d', weight: 1.6, fill: true, fillOpacity: 0 },
+    ? { color: '#0f1a24', weight: 1.2, fillColor: COL[tkCls(f.properties)], fillOpacity: S.cls.has(tkCls(f.properties)) ? .82 : .07 }
+    : { color: '#e7eef5', weight: 1.4, fill: true, fillOpacity: 0 },
   onEachFeature: (f, l) => {
     const p = f.properties, key = 't' + p.name_en; tkByKey.set(key, l);
     l.bindPopup(`<b>${esc(p.name_en)}</b><table class="pop">
       <tr><td>Residents (2025)</td><td>${nf(p.pop)}</td></tr><tr><td>Density</td><td>${nf(p.pop_density)} /km²</td></tr>
       <tr><td>Buildings (OSM)</td><td>${nf(p.bld_n)}</td></tr><tr><td>Built-up share</td><td>${nf(p.built_share * 100, 1)} %</td></tr>
       <tr><td>Exposure index</td><td>${nf(p.exposure, 2)}</td></tr><tr><td>Rank</td><td>#${p.rank_exposure} of 12</td></tr></table>
-      ${p.name_en === 'Yangihayot' ? '<p style="margin:6px 0 0;color:#5f6670">OSM building data incomplete: exposure likely underestimated.</p>' : ''}`);
+      ${p.name_en === 'Yangihayot' ? '<p style="margin:6px 0 0;color:#97a8b9">OSM building data incomplete: exposure likely underestimated.</p>' : ''}`);
     l.on('mouseover', () => tkHl(key, true)).on('mouseout', () => tkHl(key, false));
   }
 });
 function tkHl(key, on) {
   const l = tkByKey.get(key); if (!l) return;
-  if (on) { l.setStyle({ weight: 3.2, color: '#111' }); l.bringToFront(); } else tumans.resetStyle(l);
+  if (on) { l.setStyle({ weight: 3.2, color: '#ffffff' }); l.bringToFront(); } else tumans.resetStyle(l);
   const li = document.querySelector(`[data-key="${CSS.escape(key)}"]`); if (li) li.classList.toggle('hl', on);
 }
 const tkPins = L.layerGroup();
@@ -133,8 +133,8 @@ D.tashkent.features.forEach(f => { const l = tkByKey.get('t' + f.properties.name
   L.marker(l.getBounds().getCenter(), { icon: L.divIcon({ className: '', html: `<div class="rnk">${f.properties.rank_exposure}</div>`, iconSize: [24, 24] }), interactive: false, keyboard: false }).addTo(tkPins); });
 const tb = img.tk_watch.bounds;
 const tkNoData = L.layerGroup([
-  L.geoJSON(D.tk_nodata, { style: { color: '#6b7280', weight: 1, dashArray: '3 4', fillColor: '#9aa1ab', fillOpacity: .45 }, interactive: false }),
-  L.rectangle(tb, { color: '#141a26', weight: 1.6, dashArray: '8 6', fill: false, interactive: false }),
+  L.geoJSON(D.tk_nodata, { style: { color: '#6f8396', weight: 1, dashArray: '3 4', fillColor: '#3a4b5c', fillOpacity: .7 }, interactive: false }),
+  L.rectangle(tb, { color: '#35b7a6', weight: 1.6, dashArray: '8 6', fill: false, interactive: false }),
   L.marker([tb[1][0], tb[0][1]], { opacity: 0, interactive: false, keyboard: false, icon: L.divIcon({ className: '', iconSize: [0, 0] }) })
     .bindTooltip('NISAR area processed by our team', { permanent: true, direction: 'right', className: 'insetlbl', offset: [2, -10] })
 ]);
@@ -154,6 +154,14 @@ function kpis() {
     ['1966', 'M 5.1–5.3 shock under the city centre left about 100,000 people homeless', '']
   ];
   $('kpis').innerHTML = k.map(([v, l, c]) => `<div class="kpi ${c}"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+  if (!kpis.done && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    kpis.done = true;
+    document.querySelectorAll('.kpi .v').forEach(el => { const t = el.textContent, m = t.match(/[\d.]+/); if (!m) return;
+      const end = parseFloat(m[0]), dec = (m[0].split('.')[1] || '').length, t0 = performance.now();
+      const step = now => { const k2 = Math.min(1, (now - t0) / 1100), e = 1 - Math.pow(1 - k2, 3);
+        el.textContent = t.replace(m[0], (end * e).toFixed(dec)); if (k2 < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step); });
+  }
 }
 function seg(id, items, cur, row) {
   return `<div class="seg ${row ? 'row' : ''}" id="${id}">${items.map(([k, b, s]) =>
@@ -167,7 +175,7 @@ function chips(labels, zeroLabel) {
 function leftP() {
   const m = mode();
   $('left').innerHTML = `
-    <h3>Timeline · what is known when</h3>
+    <h3>What was known, and when</h3>
     <div class="tl" id="src">${[['shake', '10 Aug · minutes after', 'First estimate', 'USGS ShakeMap × residents'],
       ['ems', '12 Aug · 2 days after', 'Copernicus EMS damage map', 'optical satellite, city centre only (reference)'],
       ['radar', '13 & 16 Aug · NISAR passes', 'RapidQuake radar priority', 'whole city, free data, through clouds']].map(([k, d, b, sm]) =>
@@ -250,12 +258,12 @@ function validationCard() {
     <div class="big">ρ = ${nf(M.rho_comuna, 2)}</div>
     <p>Rank of each comuna by radar vs by the official damage map (${n} comunas with ≥ 50 % EMS coverage). Points on the line = same rank.</p>
     <svg id="scatter" viewBox="0 0 ${W} ${H}" role="img" aria-label="Scatter plot of radar rank versus EMS rank for ${n} comunas">
-      <line x1="${sx(1)}" y1="${sy(1)}" x2="${sx(n)}" y2="${sy(n)}" stroke="#bd0026" stroke-dasharray="4 4" stroke-width="1.2" opacity=".6"/>
-      ${ticks.map(t => `<text x="${sx(t)}" y="${H - pad + 16}" font-size="10" text-anchor="middle" fill="#5f6670">${t}</text><text x="${pad - 10}" y="${sy(t) + 3}" font-size="10" text-anchor="end" fill="#5f6670">${t}</text>`).join('')}
-      <text x="${(W + pad) / 2}" y="${H - 4}" font-size="10.5" text-anchor="middle" fill="#3c424a" font-weight="600">Radar rank (NISAR)</text>
-      <text x="10" y="${(H - pad) / 2}" font-size="10.5" text-anchor="middle" fill="#3c424a" font-weight="600" transform="rotate(-90 10 ${(H - pad) / 2})">EMS rank</text>
-      ${V.map(v => `<g data-n="${esc(v.name)}" style="cursor:pointer"><circle cx="${sx(v.radar_sub)}" cy="${sy(v.ems_sub)}" r="6" fill="#bd0026" stroke="#fff" stroke-width="1.5"/>
-        <text x="${sx(v.radar_sub) + (v.radar_sub > n - 2 ? -9 : 9)}" y="${sy(v.ems_sub) + 4}" font-size="10.5" fill="#1f2328" text-anchor="${v.radar_sub > n - 2 ? 'end' : 'start'}">${esc(v.name)}</text></g>`).join('')}
+      <line x1="${sx(1)}" y1="${sy(1)}" x2="${sx(n)}" y2="${sy(n)}" stroke="#97a8b9" stroke-dasharray="4 4" stroke-width="1.2" opacity=".6"/>
+      ${ticks.map(t => `<text x="${sx(t)}" y="${H - pad + 16}" font-size="10" text-anchor="middle" fill="#97a8b9">${t}</text><text x="${pad - 10}" y="${sy(t) + 3}" font-size="10" text-anchor="end" fill="#97a8b9">${t}</text>`).join('')}
+      <text x="${(W + pad) / 2}" y="${H - 4}" font-size="10.5" text-anchor="middle" fill="#c3cfdb" font-weight="600">Radar rank (NISAR)</text>
+      <text x="10" y="${(H - pad) / 2}" font-size="10.5" text-anchor="middle" fill="#c3cfdb" font-weight="600" transform="rotate(-90 10 ${(H - pad) / 2})">EMS rank</text>
+      ${V.map(v => `<g data-n="${esc(v.name)}" style="cursor:pointer"><circle cx="${sx(v.radar_sub)}" cy="${sy(v.ems_sub)}" r="6" fill="#ff5a36" stroke="#0f1a24" stroke-width="1.5"/>
+        <text x="${sx(v.radar_sub) + (v.radar_sub > n - 2 ? -9 : 9)}" y="${sy(v.ems_sub) + 4}" font-size="10.5" fill="#e7eef5" text-anchor="${v.radar_sub > n - 2 ? 'end' : 'start'}">${esc(v.name)}</text></g>`).join('')}
     </svg>
     <p><b>${nf(M.top10_ems * 100)} %</b> of damaged buildings fall in the top-10 radar squares (${nf(M.top10_built * 100)} % of all buildings).
     Under a damaged building the radar flags change <b>${nf(M.pix_hit / M.pix_rand, 1)}×</b> more often than under a random building.</p></div>`;
@@ -278,14 +286,14 @@ function legend() {
   if (S.city === 'P') {
     const m = mode();
     h = `<b>${m.title}</b>${[5, 4, 3, 2, 1].filter(c => m.labels[c - 1] !== '—').map(c => `<div><i style="background:${COL[c]}"></i>${m.labels[c - 1]}</div>`).join('')}`;
-    if (S.src === 'ems' && S.level === 'comuna') h += `<div><i style="background:#d9dce1;border-style:dashed"></i>not mapped by EMS</div>`;
+    if (S.src === 'ems' && S.level === 'comuna') h += `<div><i style="background:#3a4b5c;border:1px dashed #6f8396"></i>not mapped by EMS</div>`;
     if (S.src === 'radar') h += `<div><i class="hatch"></i>dashed outline = low radar confidence</div>`;
     if (S.radar) h += `<div style="display:block;margin-top:6px"><b style="margin:0">NISAR coherence</b><div class="grad"></div><div class="gradl"><span>low · changed</span><span>high · stable</span></div></div>`;
     if (S.ems.size) h += `<div><span class="dot" style="background:#7f0000"></span><span class="dot" style="background:#e34a33"></span><span class="dot" style="background:#fdbb84"></span>EMS damaged buildings</div>`;
   } else if (S.tk === 'exposure') {
     h = `<b>Earthquake exposure index</b>${['Very high', 'High', 'Medium', 'Low', 'Very low'].map((l, i) => `<div><i style="background:${COL[5 - i]}"></i>${l}</div>`).join('')}`;
   } else {
-    h = `<b>NISAR radar visibility</b><div><i style="background:#3c9a4a"></i>reliably watched buildings</div><div><i style="background:#c8732e"></i>weaker signal (trees, construction)</div><div><i style="background:#c3c7cd;border-style:dashed"></i>outside the area we processed</div>`;
+    h = `<b>NISAR radar visibility</b><div><i style="background:#3c9a4a"></i>reliably watched buildings</div><div><i style="background:#c8732e"></i>weaker signal (trees, construction)</div><div><i style="background:#3a4b5c;border:1px dashed #6f8396"></i>outside the area we processed</div>`;
   }
   $('legend').innerHTML = h.replace('<b>', '<b class="lt" title="Show or hide legend">');
   $('legend').querySelector('.lt').onclick = () => $('legend').classList.toggle('min');
@@ -295,11 +303,11 @@ function legend() {
 const SH = { 5: '#fecc5c', 6: '#fd8d3c', 7: '#f03b20', 8: '#bd0026' };
 const imap = L.map('insetMap', { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false,
   boxZoom: false, keyboard: false, touchZoom: false }).setView([4.6, -76.2], 7);
-L.geoJSON(D.shake, { style: f => ({ fillColor: SH[f.properties.mmi], fillOpacity: .85, color: '#fff', weight: .4 }), interactive: false }).addTo(imap);
+L.geoJSON(D.shake, { style: f => ({ fillColor: SH[f.properties.mmi], fillOpacity: .85, color: '#0f1a24', weight: .4 }), interactive: false }).addTo(imap);
 const E = D.epicentre;
 L.marker([E.lat, E.lon], { icon: L.divIcon({ className: '', html: '<div class="epi">★</div>', iconSize: [22, 22], iconAnchor: [11, 11] }), interactive: false })
   .bindTooltip('Epicentre', { permanent: true, direction: 'left', className: 'insetlbl', offset: [-9, 0] }).addTo(imap);
-D.places.forEach(c => L.circleMarker([c.lat, c.lon], { radius: c.main ? 5 : 3, color: '#fff', weight: 1.5, fillColor: c.main ? '#141a26' : '#5f6670', fillOpacity: 1, interactive: false })
+D.places.forEach(c => L.circleMarker([c.lat, c.lon], { radius: c.main ? 5 : 3, color: '#0f1a24', weight: 1.5, fillColor: c.main ? '#ffffff' : '#97a8b9', fillOpacity: 1, interactive: false })
   .bindTooltip(c.name, { permanent: true, direction: c.name === 'Armenia' || c.name === 'Cali' ? 'right' : 'right', className: 'insetlbl', offset: [5, 0] }).addTo(imap));
 const fitInset = () => { imap.invalidateSize(); imap.fitBounds([[3.35, -77.45], [5.85, -75.2]]); };
 if (window.innerWidth < 700 || $('map').clientHeight < 560) { $('inset').hidden = true; $('insetO').hidden = false; }
@@ -342,14 +350,66 @@ function fitCity() { map.invalidateSize(); map.fitBounds((S.city === 'P' ? comun
 if (window.ResizeObserver) new ResizeObserver(() => { map.invalidateSize(); if (!userMoved) fitCity(); }).observe($('map'));
 window.addEventListener('load', () => { if (!userMoved) fitCity(); });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!userMoved) fitCity(); });
-function go(city) {
-  userMoved = false;
+function go(city, keepView) {
+  userMoved = !!keepView;
   $('left').scrollTop = 0; $('right').scrollTop = 0;
   S.city = city; S.cls = new Set([1, 2, 3, 4, 5]); render();
-  fitCity();
+  if (!keepView) fitCity();
   try { history.replaceState(null, '', city === 'P' ? '#pereira' : '#tashkent'); } catch (e) { /* ignore */ }
 }
-$('cityP').onclick = () => go('P'); $('cityT').onclick = () => go('T');
+/* ---------- story mode ---------- */
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const shakeMain = L.geoJSON(D.shake, { style: f => ({ fillColor: SH[f.properties.mmi], fillOpacity: .62, color: '#0f1a24', weight: .6 }), interactive: false });
+const rings = L.marker([E.lat, E.lon], { interactive: false, keyboard: false,
+  icon: L.divIcon({ className: '', iconSize: [0, 0], html: '<div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="epi" style="position:absolute;left:-11px;top:-11px">★</div>' }) });
+const pereiraDot = L.marker([4.8133, -75.6961], { interactive: false, icon: L.divIcon({ className: '', iconSize: [0, 0], html: '<div class="rnk" style="position:absolute;left:-12px;top:-12px;width:auto;padding:0 8px;border-radius:12px">Pereira</div>' }) });
+const pulses = L.layerGroup();
+function pulseTop(n) {
+  pulses.clearLayers(); const m = mode();
+  listItems().slice(0, n).forEach(p => { const l = byId.get(S.level === 'cell' ? 'c' + p.cell : 'm' + p.codcom); if (!l) return;
+    L.marker(l.getBounds().getCenter(), { interactive: false, keyboard: false, icon: L.divIcon({ className: '', iconSize: [0, 0], html: '<div class="pulse"></div>' }) }).addTo(pulses); });
+  pulses.addTo(map);
+}
+const fly = (b, z) => reduce ? (Array.isArray(b) && typeof b[0] === 'number' ? map.setView(b, z) : map.fitBounds(b, { paddingTopLeft: [30, 30], paddingBottomRight: [30, 190] })) :
+  (Array.isArray(b) && typeof b[0] === 'number' ? map.flyTo(b, z, { duration: 1.8 }) : map.flyToBounds(b, { duration: 1.8, paddingTopLeft: [30, 30], paddingBottomRight: [30, 190] }));
+const STEPS = [
+  { when: '10 August 2026, 07:34 local time', title: 'A magnitude 7.4 earthquake strikes western Colombia',
+    text: 'The rupture is 103 km deep under Chocó. Shaking reaches intensity VII to VIII about 70 km away, in the city of Pereira.',
+    run: () => { go('P', true); [comunas, cells, pins, emsLayer, aoi, outline].forEach(l => map.removeLayer(l)); [shakeMain, rings, pereiraDot].forEach(l => l.addTo(map)); fly([4.62, -76.0], 8); } },
+  { when: 'Minutes later', title: 'The first estimate points almost everywhere',
+    text: 'Shaking × residents ranks the dense west and centre highest. It is fast, but it cannot tell which buildings actually failed.',
+    run: () => { clearStory(); S.src = 'shake'; S.level = 'comuna'; render(); fly(comunas.getBounds()); } },
+  { when: '12 August, two days after', title: 'Copernicus maps 182 damaged buildings',
+    text: 'Experts read very high-resolution optical images by eye. It is accurate, but it took two days and covers only the city centre (dashed line).',
+    run: () => { clearStory(); S.src = 'ems'; S.level = 'comuna'; render(); fly(aoi.getBounds()); } },
+  { when: '13 and 16 August, NISAR passes', title: 'Radar sees which buildings changed, everywhere',
+    text: 'NISAR images the whole city through cloud, day or night. Where buildings collapse, the radar signal loses coherence. Share of changed buildings × residents gives the ranking.',
+    run: () => { clearStory(); S.src = 'radar'; S.level = 'comuna'; S.ems = new Set(); render(); fly(comunas.getBounds()); setTimeout(() => pulseTop(3), reduce ? 0 : 1900); } },
+  { when: 'The check', title: `${nf(M.top10_ems * 100)} % of the damage sits in the radar's top 10 squares`,
+    text: `Those 10 squares hold only ${nf(M.top10_built * 100)} % of the city's buildings. The comuna ranking matches the official map with ρ = ${nf(M.rho_comuna, 2)}. Send teams to Boston, Centro and Universidad first.`,
+    run: () => { clearStory(); S.src = 'radar'; S.level = 'cell'; S.ems = new Set(['destroyed', 'damaged', 'possible']); render(); fly(aoi.getBounds()); setTimeout(() => pulseTop(3), reduce ? 0 : 1900); } },
+  { when: 'Our hometown', title: 'Tashkent is ready before the next earthquake',
+    text: 'The 1966 shock left 100,000 people homeless. Today NISAR\'s view of Tashkent is our "before" image, and the exposure ranking shows where 3.2 million residents are most at risk.',
+    run: () => { clearStory(); go('T', true); } }
+];
+let stI = -1, stTimer = null;
+function clearStory() { [shakeMain, rings, pereiraDot, pulses].forEach(l => map.removeLayer(l)); }
+function showStep(i) {
+  stI = Math.max(0, Math.min(STEPS.length - 1, i)); const st = STEPS[stI];
+  $('story').hidden = false; document.querySelector('.mapwrap').classList.add('storying'); $('stWhen').textContent = st.when; $('stTitle').textContent = st.title; $('stText').textContent = st.text;
+  $('stDots').innerHTML = STEPS.map((_, k) => `<i class="${k <= stI ? 'on' : ''}"></i>`).join('');
+  $('stPrev').disabled = stI === 0; $('stNext').textContent = stI === STEPS.length - 1 ? 'Explore the map' : 'Next';
+  userMoved = true; st.run();
+}
+function endStory() { $('story').hidden = true; document.querySelector('.mapwrap').classList.remove('storying'); clearStory(); stI = -1; }
+$('play').onclick = () => showStep(0);
+$('stNext').onclick = () => stI === STEPS.length - 1 ? endStory() : showStep(stI + 1);
+$('stPrev').onclick = () => showStep(stI - 1);
+$('stClose').onclick = endStory;
+document.addEventListener('keydown', e => { if ($('story').hidden) return;
+  if (e.key === 'Escape') endStory(); else if (e.key === 'ArrowRight') $('stNext').click(); else if (e.key === 'ArrowLeft' && stI > 0) showStep(stI - 1); });
+
+$('cityP').onclick = () => { endStory(); go('P'); }; $('cityT').onclick = () => { endStory(); go('T'); };
 $('swipeR').oninput = e => radAfter.setOpacity(e.target.value / 100);
 radAfter.setOpacity(.5);
 go(location.hash === '#tashkent' ? 'T' : 'P');

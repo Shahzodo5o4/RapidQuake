@@ -23,10 +23,10 @@ const img = D.images;
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
   maxNativeZoom: 16, maxZoom: 19, attribution: 'Basemap © Esri, HERE, Garmin, © OpenStreetMap contributors' }).addTo(map);
 const baseP = L.imageOverlay(img.base_p.img, img.base_p.bounds, { pane: 'base', attribution: '' });
-const baseT = L.imageOverlay(img.base_t.img, img.base_t.bounds, { pane: 'base', attribution: '' });
+const baseT = L.imageOverlay(img.base_t.img + '?v=8', img.base_t.bounds, { pane: 'base', attribution: '' });
 const radBefore = L.imageOverlay(img.before.img, img.before.bounds, { pane: 'radar', opacity: .85 });
 const radAfter = L.imageOverlay(img.across.img, img.across.bounds, { pane: 'radar', opacity: .5 });
-const tkWatch = L.imageOverlay(img.tk_watch.img, img.tk_watch.bounds, { pane: 'radar', opacity: .9 });
+const tkWatch = L.imageOverlay(img.tk_watch.img + '?v=8', img.tk_watch.bounds, { pane: 'radar', opacity: .9 });
 
 /* ---------- classification ---------- */
 function rankClass(r) { return r == null ? 0 : r <= 10 ? 5 : r <= 25 ? 4 : r <= 50 ? 3 : r <= 100 ? 2 : 1; }
@@ -118,7 +118,8 @@ const tumans = L.geoJSON(D.tashkent, {
     l.bindPopup(`<b>${esc(p.name_en)}</b><table class="pop">
       <tr><td>Residents (2025)</td><td>${nf(p.pop)}</td></tr><tr><td>Density</td><td>${nf(p.pop_density)} /km²</td></tr>
       <tr><td>Buildings (OSM)</td><td>${nf(p.bld_n)}</td></tr><tr><td>Built-up share</td><td>${nf(p.built_share * 100, 1)} %</td></tr>
-      <tr><td>Exposure index</td><td>${nf(p.exposure, 2)}</td></tr><tr><td>Rank</td><td>#${p.rank_exposure} of 12</td></tr></table>
+      <tr><td>Exposure index</td><td>${nf(p.exposure, 2)}</td></tr><tr><td>Rank</td><td>#${p.rank_exposure} of 12</td></tr>
+      <tr><td>NISAR radar visibility</td><td>${nf(p.radar_watch, 1)} % of built-up area</td></tr></table>
       ${p.name_en === 'Yangihayot' ? '<p style="margin:6px 0 0;color:#97a8b9">OSM building data incomplete: exposure likely underestimated.</p>' : ''}`);
     l.on('mouseover', () => tkHl(key, true)).on('mouseout', () => tkHl(key, false));
   }
@@ -133,10 +134,9 @@ D.tashkent.features.forEach(f => { const l = tkByKey.get('t' + f.properties.name
   L.marker(l.getBounds().getCenter(), { icon: L.divIcon({ className: '', html: `<div class="rnk">${f.properties.rank_exposure}</div>`, iconSize: [24, 24] }), interactive: false, keyboard: false }).addTo(tkPins); });
 const tb = img.tk_watch.bounds;
 const tkNoData = L.layerGroup([
-  L.geoJSON(D.tk_nodata, { style: { color: '#6f8396', weight: 1, dashArray: '3 4', fillColor: '#3a4b5c', fillOpacity: .7 }, interactive: false }),
   L.rectangle(tb, { color: '#35b7a6', weight: 1.6, dashArray: '8 6', fill: false, interactive: false }),
   L.marker([tb[1][0], tb[0][1]], { opacity: 0, interactive: false, keyboard: false, icon: L.divIcon({ className: '', iconSize: [0, 0] }) })
-    .bindTooltip('NISAR area processed by our team', { permanent: true, direction: 'right', className: 'insetlbl', offset: [2, -10] })
+    .bindTooltip('NISAR area processed by our team: whole city', { permanent: true, direction: 'right', className: 'insetlbl', offset: [2, -10] })
 ]);
 const T = L.layerGroup([baseT]);
 
@@ -150,7 +150,7 @@ function kpis() {
   ] : [
     [short(M.pop_tashkent), 'residents in 12 city districts (Toshstat, Oct 2025)', ''],
     ['8–9', 'seismic intensity zone, MSK-64 (whole city)', ''],
-    [nf(M.tk_watch_pct) + ' %', 'of buildings in the study area are reliably visible to NISAR radar', 'hot'],
+    [nf(M.tk_watch_pct) + ' %', 'of built-up area in all 12 districts is reliably visible to NISAR radar', 'hot'],
     ['1966', 'M 5.1–5.3 shock under the city centre left about 100,000 people homeless', '']
   ];
   $('kpis').innerHTML = k.map(([v, l, c]) => `<div class="kpi ${c}"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
@@ -269,6 +269,20 @@ function validationCard() {
     Under a damaged building the radar flags change <b>${nf(M.pix_hit / M.pix_rand, 1)}×</b> more often than under a random building.</p></div>`;
 }
 function rightT() {
+  if (S.tk === 'watch') {
+    const it = D.tashkent.features.map(f => f.properties).sort((a, b) => b.radar_watch - a.radar_watch);
+    $('right').innerHTML = `<h3>Radar visibility by district</h3><p class="hint">Share of each district's built-up area where NISAR gets a stable signal and could flag damage.</p>
+      <ol class="list" id="list">${it.map((p, i) => { const key = 't' + p.name_en;
+        return `<li tabindex="0" data-key="${esc(key)}"><div class="n" style="background:#3c9a4a;color:#fff">${i + 1}</div>
+        <div class="where"><b>${esc(p.name_en)}</b><div class="bar"><i style="width:${p.radar_watch}%;background:#3c9a4a"></i></div></div>
+        <div class="val">${nf(p.radar_watch, 1)} %<small>${short(p.pop)} residents</small></div></li>`; }).join('')}</ol>
+      <div class="card"><h4>What this shows</h4><p>NISAR coherence before the event, over buildings only. Green areas keep a stable radar signal, so a sudden drop after an earthquake would stand out. Orange areas (trees, active construction) are noisier. The whole city is covered.</p></div>`;
+    document.querySelectorAll('#list li[data-key]').forEach(li => {
+      const k = li.dataset.key; li.onmouseenter = () => tkHl(k, true); li.onmouseleave = () => tkHl(k, false);
+      li.onclick = li.onkeydown = e => { if (e.type === 'keydown' && e.key !== 'Enter') return; const l = tkByKey.get(k); map.fitBounds(l.getBounds(), { padding: [40, 40] }); l.openPopup(); };
+    });
+    return;
+  }
   const items = D.tashkent.features.map(f => f.properties).filter(p => S.tk !== 'exposure' || S.cls.has(tkCls(p))).sort((a, b) => a.rank_exposure - b.rank_exposure);
   $('right').innerHTML = `<h3>Most exposed districts</h3><p class="hint">Where an earthquake would put the most people and buildings at risk.</p>
     <ol class="list" id="list">${items.map(p => { const c = COL[tkCls(p)], key = 't' + p.name_en;
@@ -293,7 +307,7 @@ function legend() {
   } else if (S.tk === 'exposure') {
     h = `<b>Earthquake exposure index</b>${['Very high', 'High', 'Medium', 'Low', 'Very low'].map((l, i) => `<div><i style="background:${COL[5 - i]}"></i>${l}</div>`).join('')}`;
   } else {
-    h = `<b>NISAR radar visibility</b><div><i style="background:#3c9a4a"></i>reliably watched buildings</div><div><i style="background:#c8732e"></i>weaker signal (trees, construction)</div><div><i style="background:#3a4b5c;border:1px dashed #6f8396"></i>outside the area we processed</div>`;
+    h = `<b>NISAR radar visibility</b><div><i style="background:#3c9a4a"></i>reliably watched buildings</div><div><i style="background:#c8732e"></i>weaker signal (trees, construction)</div><div><i style="background:transparent;border:1.6px dashed #35b7a6"></i>area processed by our team (whole city)</div>`;
   }
   $('legend').innerHTML = h.replace('<b>', '<b class="lt" title="Show or hide legend">');
   $('legend').querySelector('.lt').onclick = () => $('legend').classList.toggle('min');

@@ -50,21 +50,28 @@ places=[{"name":"Pereira","lat":4.8133,"lon":-75.6961,"main":True},{"name":"Mani
         {"name":"Armenia","lat":4.5339,"lon":-75.6811},{"name":"Cali","lat":3.4516,"lon":-76.5320},{"name":"Quibdó","lat":5.6947,"lon":-76.6611}]
 # --- Tashkent
 t=gpd.read_file(f"{R}/output/tashkent.gpkg", layer="districts")
-from shapely.geometry import box as _box
-_b=j_tk_bounds=None
 tc=["name_en","pop","area_km2","pop_density","bld_n","bld_density","built_share","exposure","rank_exposure"]
 # teammate metrics
-s2=open('/tmp/web/data.js').read(); j=json.loads(s2[s2.index('{'):s2.rstrip().rstrip(';').rindex('}')+1])
-tb=j["tk_watch"]["bounds"]; cov=_box(tb[0][1],tb[0][0],tb[1][1],tb[1][0])
-nod=gpd.GeoDataFrame(geometry=[t.to_crs(4326).union_all().difference(cov)],crs=4326)
-nod["geometry"]=nod.geometry.simplify(0.0003)
-D_tk_nodata=json.loads(nod.to_json(drop_id=True))
-D={"tk_nodata":D_tk_nodata,"shake":shake,"places":places,"epicentre":{"lat":4.99,"lon":-76.29,"depth_km":103},"comunas":gj(c,cc),"cells":cells,"ems":gj(e,["dmg"],6),"ems_aoi":gj(aoi,[]),"tashkent":gj(t,tc),
+s2=open(f'{U}/tashkent_full/data.js').read(); j=json.loads(s2[s2.index('{'):s2.rstrip().rstrip(';').rindex('}')+1])
+# full-city NISAR run: radar visibility per district (share of built-up area the radar watches reliably)
+tt=gpd.GeoDataFrame.from_features(j["tk_tumans"]["features"],crs=4326)
+NM={"Yashnobod Tumani":"Yashnabad","Uchtepa Tumani":"Uchtepa","Shayhontohur Tumani":"Shaykhantakhur","Olmazor Tumani":"Olmazar",
+    "Chilonzor Tumani":"Chilanzar","Yakkasaroy Tumani":"Yakkasaray","Sergeli tumani":"Sergeli","Bektemir Tumani":"Bektemir",
+    "Mirobod Tumani":"Mirabad","Yunusobod Tumani":"Yunusabad","Mirzo Ulug‘bek Tumani":"Mirzo Ulugbek","Yangi hayot Tumani":"Yangihayot"}
+tt["name_en"]=tt["name"].map(NM); tt=tt.dropna(subset=["name_en"])   # Yangi Toshkent is outside our 12-district layer
+t=t.merge(tt[["name_en","watch_pct","coverage_pct","built_km2"]],on="name_en",how="left")
+assert t.watch_pct.notna().all()
+t["radar_watch"]=t.watch_pct.round(1)
+tk_watch_city=float((t.watch_pct*t.built_km2).sum()/t.built_km2.sum())
+tk_cov_city=float((t.coverage_pct*t.built_km2).sum()/t.built_km2.sum())
+print("Tashkent radar watch (12 districts, built-area weighted):",round(tk_watch_city,1),"coverage",round(tk_cov_city,1))
+tc=tc+["radar_watch"]
+D={"shake":shake,"places":places,"epicentre":{"lat":4.99,"lon":-76.29,"depth_km":103},"comunas":gj(c,cc),"cells":cells,"ems":gj(e,["dmg"],6),"ems_aoi":gj(aoi,[]),"tashkent":gj(t,tc),
    "metrics":{"rho_comuna":round(float(rho.statistic),2),"p_comuna":round(float(rho.pvalue),3),"n_comuna":int(len(s)),
               "top10_ems":j["metrics"]["top10_ems"],"top10_built":j["metrics"]["top10_built"],"rho_cells":j["metrics"]["spearman"],
               "pix_hit":j["metrics"]["pixel"]["ems_hit"],"pix_rand":j["metrics"]["pixel"]["random"],
               "n_ems":int(len(e)),"n_destroyed":int((e.dmg=="destroyed").sum()),"n_damaged":int((e.dmg=="damaged").sum()),"n_possible":int((e.dmg=="possible").sum()),
-              "pop_pereira":int(c["pop"].sum()),"pop_tashkent":int(t["pop"].sum()),"tk_watch_pct":round(j["tk_sum"]["watch_pct"],1)},
+              "pop_pereira":int(c["pop"].sum()),"pop_tashkent":int(t["pop"].sum()),"tk_watch_pct":round(tk_watch_city,1),"tk_cov_pct":round(min(tk_cov_city,100),1)},
    "validation":val,
    "images":{k:{"img":j[k]["img"],"bounds":j[k]["bounds"]} for k in ["base_p","base_t","before","across","tk_watch"]}}
 D=rnd(D)

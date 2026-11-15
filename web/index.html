@@ -4,54 +4,249 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RapidQuake</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<meta name="description" content="RapidQuake uses NASA-ISRO NISAR radar and population data to map which districts rescue teams should check first after an earthquake.">
+<link rel="icon" href="img/logo-sm.png">
 <link rel="stylesheet" href="lib/leaflet.css">
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<header class="top">
-  <div class="brand">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12.5" fill="none" stroke="#fdbb84" stroke-width="2"/><path d="M3 15h5l2.5-6 3.5 12 3-8 2 2h6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <div><b>RapidQuake</b><span>From radar to rescue: NASA-ISRO NISAR shows rescue teams where to look first after an earthquake</span></div>
-  </div>
-  <button type="button" class="play" id="play"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>Play the story</button>
-  <nav class="city" aria-label="City">
-    <button type="button" id="cityP" class="on">Pereira, Colombia</button>
-    <button type="button" id="cityT">Tashkent, Uzbekistan</button>
+
+<header class="topbar" id="bar">
+  <a class="brand" href="#top" data-go="top" aria-label="RapidQuake, back to start"><img src="img/logo-sm.png" alt="RapidQuake" width="440" height="192"></a>
+  <nav class="nav" aria-label="Sections">
+    <a href="#live-map" data-go="live-map">Live map</a>
+    <a href="#how" data-go="how">How it works</a>
+    <a href="#score" data-go="score">Priority score</a>
+    <a href="#proof" data-go="proof">Proof</a>
+    <a href="#research" data-go="research">Research</a>
   </nav>
+  <button type="button" class="btn primary" id="playTop"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>Play the story</button>
 </header>
 
-<section class="kpis" id="kpis" aria-label="Key numbers"></section>
+<main id="deck">
 
-<main class="grid">
-  <aside class="panel left" id="left" aria-label="Filters"></aside>
-  <div class="mapwrap">
-    <div id="map" role="region" aria-label="Map"></div>
-    <div class="legend" id="legend"></div>
-    <div class="inset" id="inset">
-      <div class="inset-h"><b>Regional shaking · why Pereira</b><button type="button" id="insetX" aria-label="Hide regional map">×</button></div>
-      <div id="insetMap" role="img" aria-label="Regional map: epicentre, USGS ShakeMap intensity and Pereira"></div>
-      <div class="inset-l"><span><i style="background:#fecc5c"></i>V</span><span><i style="background:#fd8d3c"></i>VI</span><span><i style="background:#f03b20"></i>VII</span><span><i style="background:#bd0026"></i>VIII</span><span>MMI · USGS</span><span>★ epicentre, 103 km deep (SGC)</span></div>
-    </div>
-    <button type="button" class="inset-open" id="insetO" hidden>Regional map</button>
-    <div class="story" id="story" hidden role="dialog" aria-live="polite" aria-label="Story">
-      <div class="when" id="stWhen"></div><h2 id="stTitle"></h2><p id="stText"></p>
-      <div class="ctl"><div class="dots" id="stDots"></div><button type="button" id="stPrev">Back</button><button type="button" class="go" id="stNext">Next</button><button type="button" id="stClose" aria-label="Close story">Close</button></div>
-    </div>
-    <div class="swipe" id="swipe" hidden>
-      <span>Before</span><input type="range" id="swipeR" min="0" max="100" value="50" aria-label="Radar before or after the earthquake"><span>After</span>
+<!-- ============ 1 · HERO ============ -->
+<section class="hero" id="top">
+  <canvas id="globe" aria-hidden="true"></canvas>
+  <div class="hero-fallback" aria-hidden="true"><img src="img/logo.png" alt=""></div>
+  <div class="glabel hot" id="glP"><b>M 7.4, 10 Aug 2026</b><span>Pereira, Colombia. Our test case.</span></div>
+  <div class="glabel" id="glT"><b>Tashkent, Uzbekistan</b><span>Home. The “before” image is ready.</span></div>
+
+  <div class="hero-copy">
+    <p class="eyebrow"><span class="live"></span>NASA Space Apps Challenge 2026 · Tashkent</p>
+    <h1><span class="ln"><span>After an earthquake,</span></span><span class="ln"><span>where do rescuers</span></span><span class="ln"><span><em>go first?</em></span></span></h1>
+    <p class="lede">We take NASA-ISRO NISAR radar images from before and after the quake, add where people live, and get a map of the districts to check first.</p>
+    <div class="cta">
+      <a class="btn primary big" href="#live-map" data-go="live-map">Open the priority map<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <button type="button" class="btn line big" id="playHero"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>Play the story</button>
     </div>
   </div>
-  <aside class="panel right" id="right" aria-label="Ranking and validation"></aside>
+
+  <ol class="pipe" aria-label="The idea in three steps">
+    <li><b>Radar measures what changed</b><span>NISAR compares the city before and after, through clouds, day or night.</span></li>
+    <li><b>We count who lives there</b><span>Buildings with a changed radar signal × residents.</span></li>
+    <li><b>Districts get ranked</b><span>Rescue teams see where to check first.</span></li>
+  </ol>
+</section>
+
+<!-- ============ 2 · MAP ============ -->
+<section class="mapsec" id="live-map">
+  <div class="maphead">
+    <div class="mh-title"><p class="label">Live map</p><h2 id="mapTitle">Pereira, Colombia</h2></div>
+    <div class="city" role="group" aria-label="City">
+      <button type="button" id="cityP" class="on">Pereira</button>
+      <button type="button" id="cityT">Tashkent</button>
+    </div>
+    <div class="kpis" id="kpis" aria-label="Key numbers"></div>
+  </div>
+  <div class="grid">
+    <aside class="panel left" id="left" aria-label="Map controls"></aside>
+    <div class="mapwrap" id="mapwrap">
+      <div id="map" role="region" aria-label="Map"></div>
+      <div class="legend" id="legend"></div>
+      <div class="inset" id="inset">
+        <div class="inset-h"><b>Regional shaking: why Pereira</b><button type="button" id="insetX" aria-label="Hide regional map">×</button></div>
+        <div id="insetMap" role="img" aria-label="Regional map: epicentre, USGS ShakeMap intensity and Pereira"></div>
+        <div class="inset-l"><span><i style="background:#fecc5c"></i>V</span><span><i style="background:#fd8d3c"></i>VI</span><span><i style="background:#f03b20"></i>VII</span><span><i style="background:#bd0026"></i>VIII</span><span>MMI, USGS</span><span>★ epicentre, 103 km deep (SGC)</span></div>
+      </div>
+      <button type="button" class="inset-open" id="insetO" hidden>Regional shaking map</button>
+      <div class="swipe" id="swipe" hidden>
+        <span class="sw-tag l">Before the quake</span><span class="sw-tag r">Across the quake</span>
+        <div class="sw-line" id="swLine" role="slider" tabindex="0" aria-label="Radar before or after the earthquake" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><b><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 5l-4 5 4 5M13 5l4 5-4 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></b></div>
+      </div>
+      <button type="button" class="fullmap" id="fullMap" aria-pressed="false" title="Expand the map"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8V3h5M17 8V3h-5M3 12v5h5M17 12v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Expand map</span></button>
+      <div class="wheel-hint" id="wheelHint">Click the map to zoom with the mouse wheel</div>
+      <div class="story" id="story" hidden role="dialog" aria-live="polite" aria-label="Story">
+        <div class="st-top"><span class="when" id="stWhen"></span><span class="st-n" id="stN"></span></div>
+        <h3 id="stTitle"></h3><p id="stText"></p>
+        <div class="ctl"><div class="dots" id="stDots"></div><button type="button" class="btn line" id="stPrev">Back</button><button type="button" class="btn primary" id="stNext">Next</button><button type="button" class="btn line" id="stClose" aria-label="Close story">Close</button></div>
+      </div>
+    </div>
+    <aside class="panel right" id="right" aria-label="Ranking"></aside>
+  </div>
+</section>
+
+<!-- ============ 3 · HOW IT WORKS ============ -->
+<section class="sec how" id="how">
+  <div class="how-copy">
+    <p class="label reveal">How it works</p>
+    <h2 class="reveal">Three steps from orbit to a rescue list.</h2>
+    <ol class="steps">
+      <li class="reveal"><b>The radar looks</b><p>NISAR L-band radar images the city every 12 days, day or night, through clouds.</p></li>
+      <li class="reveal"><b>We measure the change</b><p>We compare image pairs from before and across the quake. A strong loss of radar coherence over buildings is an indicator of possible damage.</p></li>
+      <li class="reveal"><b>We rank the districts</b><p>Share of buildings with a changed signal × residents = people potentially affected. Areas are ranked for inspection.</p></li>
+    </ol>
+  </div>
+  <figure class="sky-wrap reveal">
+    <div class="sky-head">
+      <figcaption><b>Pereira in 3D · real project data</b><span>295 squares of 500 × 500 m. A taller tower means a higher inspection priority. Drag to turn.</span></figcaption>
+      <div class="seg2" id="skyMode" role="group" aria-label="What the towers show">
+        <button type="button" data-k="shake">Minutes after<small>shaking × residents</small></button>
+        <button type="button" data-k="radar" class="on">After NISAR<small>radar priority</small></button>
+      </div>
+    </div>
+    <div class="sky" id="sky"><canvas id="skyC" aria-label="3D chart of priority per 500 m square in Pereira"></canvas>
+      <div class="sky-tip" id="skyTip" hidden></div>
+      <div class="sky-lbl" id="skyL0"></div><div class="sky-lbl" id="skyL1"></div><div class="sky-lbl" id="skyL2"></div>
+      <p class="sky-note" id="skyNote"></p>
+    </div>
+  </figure>
+</section>
+
+<!-- ============ 4 · PRIORITY SCORE ============ -->
+<section class="sec score" id="score">
+  <div class="score-copy">
+    <p class="label reveal">Impact Priority Score · proposed model</p>
+    <h2 class="reveal">How a district gets its priority</h2>
+    <p class="sub reveal">The score is our proposed way to rank districts for emergency services. It is a preliminary estimate of where damage is likely, not a confirmation that anything was destroyed.</p>
+    <div class="levels reveal" aria-label="Priority levels">
+      <div class="lvl hi"><b>High</b><span>Check this district first.</span></div>
+      <div class="lvl mid"><b>Medium</b><span>Needs another look.</span></div>
+      <div class="lvl lo"><b>Low</b><span>Lower priority for now.</span></div>
+    </div>
+  </div>
+  <div class="score-table reveal">
+    <table>
+      <thead><tr><th scope="col">What goes into the score</th><th scope="col">Status</th></tr></thead>
+      <tbody>
+        <tr><td><b>Radar signal change</b><span>NISAR images from before and after the quake, compared to find where the radar signal changed.</span></td><td><i class="st on">On the map now</i></td></tr>
+        <tr><td><b>Damage likelihood</b><span>The share of buildings whose signal changed. An indicator of possible damage, not a confirmed collapse.</span></td><td><i class="st on">On the map now</i></td></tr>
+        <tr><td><b>Population exposure</b><span>How many residents live in the potentially affected district.</span></td><td><i class="st on">On the map now</i></td></tr>
+        <tr><td><b>Data confidence</b><span>Where the radar signal is weak or data is missing, the district is flagged.</span></td><td><i class="st half">Partly: low-confidence flag</i></td></tr>
+        <tr><td><b>Infrastructure importance</b><span>Hospitals, schools, roads and other critical sites nearby.</span></td><td><i class="st">Planned</i></td></tr>
+      </tbody>
+    </table>
+    <p class="tnote">Today the map ranks by share of buildings with a changed signal × residents. How the five parts are weighted is a proposal that still has to be tested.</p>
+  </div>
+</section>
+
+<!-- ============ 5 · PROOF ============ -->
+<section class="sec proof" id="proof">
+  <div class="sec-head">
+    <p class="label reveal">Proof, Pereira, August 2026</p>
+    <h2 class="reveal">Checked against the official damage map.</h2>
+    <p class="sub reveal" id="proofSub"></p>
+  </div>
+  <div class="proof-grid">
+    <div class="stats" id="stats"></div>
+    <figure class="scatter reveal" id="scatterBox"></figure>
+  </div>
+  <div class="proof-foot">
+    <p class="honest reveal"><b>Limits of this check.</b> One earthquake, one city, and a comuna-level sample of only six. It is a first consistency check, not a measured accuracy. We report no figures for accuracy, speed or lives saved because we have not measured them.</p>
+    <details class="expert reveal"><summary>For experts: method and checks</summary><div id="expert"></div></details>
+  </div>
+</section>
+
+<!-- ============ 6 · RESEARCH ============ -->
+<section class="sec research" id="research">
+  <div class="sec-head">
+    <p class="label reveal">Research</p>
+    <h2 class="reveal">Both cities have been here before.</h2>
+  </div>
+  <div class="cols3 cols4">
+    <article class="rc reveal">
+      <div class="rc-big">26 April 1966</div>
+      <h3>The Tashkent earthquake</h3>
+      <ul>
+        <li>A magnitude 5.1–5.3 shock at 05:23, only 3–8 km under the city centre.<sup><a href="#src2">2</a></sup></li>
+        <li>About 100,000 people lost their homes. Other estimates say 200,000 to 300,000.<sup><a href="#src1">1</a>,<a href="#src2">2</a></sup></li>
+        <li>28,000 buildings destroyed, including 200 hospitals and clinics and 180 schools.<sup><a href="#src1">1</a></sup></li>
+        <li>Reported deaths range from 10 to 200. By 1970 the city had 100,000 new homes.<sup><a href="#src1">1</a>,<a href="#src2">2</a></sup></li>
+      </ul>
+      <p class="rc-note">This is history, not satellite data. NISAR launched in 2025.</p>
+    </article>
+    <article class="rc reveal">
+      <div class="rc-big" id="rcPop">3.16M</div>
+      <h3>Seismic risk in Uzbekistan</h3>
+      <ul>
+        <li>That many people live in Tashkent's districts. The whole city is in the 8–9 intensity zone (MSK-64).<sup><a href="#src8">8</a></sup></li>
+        <li>More than half of the country's people and economy are in areas of high seismic risk.<sup><a href="#src3">3</a></sup></li>
+        <li>In an average year earthquakes affect about 1 million people in Uzbekistan.<sup><a href="#src4">4</a></sup></li>
+        <li>A World Bank study puts Tashkent first for seismic hazard among the nine largest cities of Central Asia and the Caucasus.<sup><a href="#src5">5</a></sup></li>
+      </ul>
+      <p class="rc-note">The city was also damaged by earthquakes in 1866 and 1886.<sup><a href="#src2">2</a></sup></p>
+    </article>
+    <article class="rc reveal">
+      <div class="rc-big">M 7.4</div>
+      <h3>Pereira, Colombia: our test case</h3>
+      <ul>
+        <li>The 10 August 2026 earthquake is the strongest recorded in Colombia this century, and Pereira was one of the hardest-hit cities.<sup><a href="#src11">11</a>,<a href="#src12">12</a></sup></li>
+        <li>In 1999 an Mw 6.2 earthquake hit Armenia and Pereira: 1,171 deaths, about 5,000 seriously injured and up to 250,000 people left homeless.<sup><a href="#src9">9</a></sup></li>
+        <li>In 1995 an Mw 6.4 earthquake badly affected Pereira, and many buildings there were rebuilt or retrofitted afterwards.<sup><a href="#src9">9</a>,<a href="#src10">10</a></sup></li>
+        <li id="rcPer"></li>
+      </ul>
+      <p class="rc-note">We chose Pereira because it has both NISAR passes after the quake and an official Copernicus damage map to check against.</p>
+    </article>
+    <article class="rc reveal">
+      <div class="rc-big">About every 3 days</div>
+      <h3>How NISAR works</h3>
+      <svg class="waves" viewBox="0 0 320 96" role="img" aria-label="Radar echoes: the same before and after where nothing changed, different where the surface changed">
+        <text x="0" y="12">Surface unchanged</text><text x="170" y="12">Surface changed</text>
+        <path class="w b" d="M0 34 q10 -14 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0"/>
+        <path class="w a" d="M0 62 q10 -14 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0"/>
+        <path class="w b" d="M170 34 q10 -14 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 t20 0"/>
+        <path class="w a bad" d="M170 62 q6 -12 12 2 t9 -5 t13 6 t8 -8 t14 4 t10 4 t9 -8 t12 6 t11 -3 t10 4 t12 -2"/>
+        <text x="0" y="86" class="ok">echoes match: high coherence</text><text x="170" y="86" class="no">coherence drops: flagged</text>
+      </svg>
+      <ul>
+        <li>NISAR is a NASA and ISRO radar satellite launched on 30 July 2025, the first with both L-band and S-band radar.<sup><a href="#src6">6</a>,<a href="#src7">7</a></sup></li>
+        <li>It flies 747 km up and works at night and through clouds. Its orbit repeats every 12 days, but because it images on both ascending and descending passes, it samples a place about every 6 days on average.<sup><a href="#src6">6</a>,<a href="#src13">13</a></sup></li>
+        <li>NISAR is not the only radar satellite in orbit. Adding ESA's Sentinel-1 satellites (every 6–12 days) means a fresh radar image of a city can arrive about every 3 days (our estimate).<sup><a href="#src14">14</a></sup></li>
+        <li>Radar sends its own signal and records the echo. Where nothing changed, two passes match (high coherence). Collapse and debris break the match, but so can construction or vegetation, so a coherence drop is an indicator of possible damage, not proof.</li>
+        <li id="rcWatch"></li>
+      </ul>
+    </article>
+  </div>
+  <ol class="sources reveal" aria-label="Sources">
+    <li id="src1">USGS, <a href="https://webarchive.library.unt.edu/eot2008/20090506194629/http://earthquake.usgs.gov/regional/world/events/1966_04_25.php" target="_blank" rel="noopener">Historic Earthquakes: Tashkent, 1966</a> (archived)</li>
+    <li id="src2">Wikipedia, <a href="https://en.wikipedia.org/wiki/1966_Tashkent_earthquake" target="_blank" rel="noopener">1966 Tashkent earthquake</a></li>
+    <li id="src3">World Bank via PreventionWeb, <a href="https://www.preventionweb.net/go/51504" target="_blank" rel="noopener">Strengthening disaster resilience in Uzbekistan</a></li>
+    <li id="src4">World Bank (2016), <a href="https://www.worldbank.org/en/news/feature/2016/12/14/uzbekistan-moves-towards-proactive-approach-to-disaster-risk-management" target="_blank" rel="noopener">Uzbekistan and disaster risk management</a></li>
+    <li id="src5">World Bank (2022), reported by <a href="https://kun.uz/en/news/2022/05/27/wb-names-serious-threats-to-long-term-growth-and-sustainability-of-uzbekistan" target="_blank" rel="noopener">Kun.uz</a></li>
+    <li id="src6">NASA Science, <a href="https://science.nasa.gov/mission/nisar/mission-overview/" target="_blank" rel="noopener">NISAR mission overview</a></li>
+    <li id="src7">NASA, <a href="https://science.nasa.gov/blogs/nisar/2025/07/30/nasa-isros-nisar-mission-by-the-numbers" target="_blank" rel="noopener">NISAR by the numbers</a></li>
+    <li id="src8">RapidQuake project data: Tashkent City Statistics Department (2025), WorldPop 2020, NISAR via NASA ASF DAAC, OpenStreetMap</li>
+    <li id="src9">IStructE EEFIT, <a href="https://www.istructe.org/IStructE/media/Public/Resources/report-eefit-quindio-colombia-20190814.pdf" target="_blank" rel="noopener">The Quindío, Colombia earthquake of 25 January 1999</a></li>
+    <li id="src10">Wikipedia, <a href="https://en.wikipedia.org/wiki/1995_Choco_earthquake" target="_blank" rel="noopener">1995 Chocó earthquake</a></li>
+    <li id="src11">Forbes Colombia (2026), <a href="https://forbes.co/2026/08/10/actualidad/el-terremoto-que-sacudio-a-colombia-recuerda-la-tragedia-de-armenia-de-hace-27-anos/" target="_blank" rel="noopener">El terremoto que sacudió a Colombia</a></li>
+    <li id="src12">El Observador (2026), <a href="https://observador.cr/armenia-la-ciudad-de-colombia-que-se-reconstruyo-tras-el-terremoto-de-1999-y-ahora-no-registro-muertos/" target="_blank" rel="noopener">Armenia, la ciudad que se reconstruyó</a></li>
+    <li id="src13">NASA JPL, <a href="https://nisar.jpl.nasa.gov/nisarmission" target="_blank" rel="noopener">NISAR quick facts</a></li>
+    <li id="src14">CASRAI, <a href="https://casrai.org/guides/nisar" target="_blank" rel="noopener">NISAR guide: comparison with Sentinel-1 and ALOS-2</a></li>
+  </ol>
+  <footer class="foot">
+    <img src="img/logo-sm.png" alt="RapidQuake" width="440" height="192">
+    <div>
+      <p class="foot-line">RapidQuake team, NASA Space Apps Challenge 2026, Tashkent. <a href="https://github.com/shahzodo5o4/RapidQuake" target="_blank" rel="noopener">Source code on GitHub</a></p>
+      <p class="credits">Data: NASA-ISRO NISAR L2 GUNW via NASA ASF DAAC · Damage reference: © European Union, Copernicus EMS EMSR916 · USGS ShakeMap · WorldPop 2020 (CC BY 4.0) · Tashkent City Statistics Department (2025) · Comunas: Alcaldía de Pereira · Buildings &amp; boundaries © OpenStreetMap contributors (ODbL) · Map: Leaflet, basemap © Esri · RapidQuake team, NASA Space Apps Challenge 2026, Tashkent</p>
+    </div>
+  </footer>
+</section>
+
 </main>
 
-<footer class="credits">
-  Data: NASA-ISRO NISAR L2 GUNW via NASA ASF DAAC · Damage reference: © European Union, Copernicus EMS EMSR916 · USGS ShakeMap · WorldPop 2020 (CC BY 4.0) · Tashkent City Statistics Department (2025) · Comunas: Alcaldía de Pereira · Buildings & boundaries © OpenStreetMap contributors (ODbL) · Map: Leaflet, basemap © Esri · RapidQuake team, NASA Space Apps Challenge 2026, Tashkent
-</footer>
-
 <script src="lib/leaflet.js"></script>
-<script src="data.js?v=8"></script>
-<script src="app.js?v=8"></script>
+<script src="data.js"></script>
+<script src="tashkent.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
